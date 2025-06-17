@@ -58,15 +58,15 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
     <div className="rounded-lg border overflow-hidden">
       {/* Header */}
       <div className="bg-gray-50 border-b">
-        <div className="grid grid-cols-13 gap-4 p-4 font-medium text-sm text-gray-700">
-          <div className="col-span-2">Name</div>
+        <div className="grid grid-cols-12 gap-4 p-4 font-medium text-sm text-gray-700">
+          <div className="col-span-3">Name</div>
           <div className="col-span-1 text-center">Type</div>
           <div className="col-span-1 text-center">Mode</div>
           <div className="col-span-1 text-center">Voltage</div>
-          <div className="col-span-1 text-center">Tap Position</div>
-          <div className="col-span-1 text-center">Tap Range</div>
-          <div className="col-span-2 text-right">Status</div>
-          <div className="col-span-2 text-center">Role</div>
+          <div className="col-span-1 text-center">Tap Pos</div>
+          <div className="col-span-1 text-center">Range</div>
+          <div className="col-span-2 text-center">Status</div>
+          <div className="col-span-1 text-center">Role</div>
           <div className="col-span-1 text-center">Actions</div>
         </div>
       </div>
@@ -81,8 +81,8 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
             <div key={master.id}>
               {/* Master Row */}
               <div className="hover:bg-gray-50 transition-colors">
-                <div className="grid grid-cols-13 gap-4 p-4 items-center">
-                  <div className="col-span-2 flex items-center gap-2">
+                <div className="grid grid-cols-12 gap-4 p-4 items-center">
+                  <div className="col-span-3 flex items-center gap-2">
                     <button
                       onClick={() => toggleMaster(master.id)}
                       className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -90,7 +90,7 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
                       {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </button>
                     <span className="font-medium truncate" title={master.name}>
-                      {master.name.length > 20 ? `${master.name.substring(0, 20)}...` : master.name}
+                      {master.name.length > 25 ? `${master.name.substring(0, 25)}...` : master.name}
                     </span>
                   </div>
                   <div className="col-span-1 flex justify-center">
@@ -108,15 +108,15 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
                   <div className="col-span-1 text-center text-sm font-medium">{master.voltage} V</div>
                   <div className="col-span-1 text-center text-sm font-medium">{master.tapPosition}</div>
                   <div className="col-span-1 text-center text-sm">
-                    {master.tapLimits.min} - {master.tapLimits.max}
+                    {master.tapLimits.min}-{master.tapLimits.max}
                   </div>
-                  <div className="col-span-2 flex justify-end">
+                  <div className="col-span-2 flex justify-center">
                     <span className={getStatusBadge(master.status)}>
                       {getStatusIcon(master.status)}
                       {master.status.charAt(0).toUpperCase() + master.status.slice(1)}
                     </span>
                   </div>
-                  <div className="col-span-2 flex items-center justify-center gap-1 text-yellow-600">
+                  <div className="col-span-1 flex items-center justify-center gap-1 text-yellow-600">
                     <Crown className="h-4 w-4" />
                     <span className="text-xs font-medium">Master</span>
                   </div>
@@ -132,13 +132,13 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
               {isExpanded &&
                 followers.map((follower) => (
                   <div key={follower.id} className="bg-blue-50 hover:bg-blue-100 transition-colors">
-                    <div className="grid grid-cols-13 gap-4 p-4 pl-12 items-center">
-                      <div className="col-span-2 flex items-center gap-2">
+                    <div className="grid grid-cols-12 gap-4 p-4 pl-12 items-center">
+                      <div className="col-span-3 flex items-center gap-2">
                         <div className="w-4 h-4 flex items-center justify-center">
                           <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                         </div>
                         <span className="font-medium truncate" title={follower.name}>
-                          {follower.name.length > 18 ? `${follower.name.substring(0, 18)}...` : follower.name}
+                          {follower.name.length > 23 ? `${follower.name.substring(0, 23)}...` : follower.name}
                         </span>
                       </div>
                       <div className="col-span-1 flex justify-center">
@@ -154,15 +154,15 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
                       <div className="col-span-1 text-center text-sm font-medium">{follower.voltage} V</div>
                       <div className="col-span-1 text-center text-sm font-medium">{follower.tapPosition}</div>
                       <div className="col-span-1 text-center text-sm">
-                        {follower.tapLimits.min} - {follower.tapLimits.max}
+                        {follower.tapLimits.min}-{follower.tapLimits.max}
                       </div>
-                      <div className="col-span-2 flex justify-end">
+                      <div className="col-span-2 flex justify-center">
                         <span className={getStatusBadge(follower.status)}>
                           {getStatusIcon(follower.status)}
                           {follower.status.charAt(0).toUpperCase() + follower.status.slice(1)}
                         </span>
                       </div>
-                      <div className="col-span-2 flex items-center justify-center gap-1 text-blue-600">
+                      <div className="col-span-1 flex items-center justify-center gap-1 text-blue-600">
                         <Users className="h-4 w-4" />
                         <span className="text-xs font-medium">Follower</span>
                       </div>
@@ -181,11 +181,11 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
         {/* Standalone Transformers */}
         {standalones.map((transformer) => (
           <div key={transformer.id} className="hover:bg-gray-50 transition-colors">
-            <div className="grid grid-cols-13 gap-4 p-4 items-center">
-              <div className="col-span-2 flex items-center gap-2">
+            <div className="grid grid-cols-12 gap-4 p-4 items-center">
+              <div className="col-span-3 flex items-center gap-2">
                 <div className="w-6 h-4"></div>
                 <span className="font-medium truncate" title={transformer.name}>
-                  {transformer.name.length > 20 ? `${transformer.name.substring(0, 20)}...` : transformer.name}
+                  {transformer.name.length > 25 ? `${transformer.name.substring(0, 25)}...` : transformer.name}
                 </span>
               </div>
               <div className="col-span-1 flex justify-center">
@@ -203,15 +203,15 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
               <div className="col-span-1 text-center text-sm font-medium">{transformer.voltage} V</div>
               <div className="col-span-1 text-center text-sm font-medium">{transformer.tapPosition}</div>
               <div className="col-span-1 text-center text-sm">
-                {transformer.tapLimits.min} - {transformer.tapLimits.max}
+                {transformer.tapLimits.min}-{transformer.tapLimits.max}
               </div>
-              <div className="col-span-2 flex justify-end">
+              <div className="col-span-2 flex justify-center">
                 <span className={getStatusBadge(transformer.status)}>
                   {getStatusIcon(transformer.status)}
                   {transformer.status.charAt(0).toUpperCase() + transformer.status.slice(1)}
                 </span>
               </div>
-              <div className="col-span-2 flex justify-center">
+              <div className="col-span-1 flex justify-center">
                 <span className="text-xs text-gray-500 font-medium">Standalone</span>
               </div>
               <div className="col-span-1 flex justify-center">
