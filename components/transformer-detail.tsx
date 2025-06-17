@@ -362,7 +362,7 @@ export function TransformerDetail({
 
               <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Quick Controls</h3>
-                
+
                 {transformer.masterFollower?.isFollower ? (
                   <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -858,9 +858,7 @@ export function TransformerDetail({
                             <div className="flex items-center gap-1">
                               {event.type === "Mode Change" && <Settings className="h-3 w-3 text-blue-600" />}
                               {event.type === "Interlock" && <AlertTriangle className="h-3 w-3 text-red-600" />}
-                              {event.type === "Band Violation" && (
-                                <AlertTriangle className="h-3 w-3 text-yellow-600" />
-                              )}
+                              {event.type === "Band Violation" && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
                               {event.type === "System" && <Info className="h-3 w-3 text-gray-600" />}
                               {event.type === "Communication" && <Wifi className="h-3 w-3 text-purple-600" />}
                               {event.type}
@@ -914,7 +912,8 @@ export function TransformerDetail({
             transformerName={transformer.name}
             onExport={handleEventExport}
           />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  )
+}
