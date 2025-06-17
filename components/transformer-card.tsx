@@ -1,16 +1,18 @@
 "use client"
 
-import { Activity, AlertTriangle, Check } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Activity, AlertTriangle, Check, CheckCircle, XCircle } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { TransformerNameChip } from "@/components/transformer-name-chip"
 import type { Transformer } from "@/types/transformer"
 
 interface TransformerCardProps {
   transformer: Transformer
+  transformers: Transformer[]
   onClick: () => void
 }
 
-export function TransformerCard({ transformer, onClick }: TransformerCardProps) {
+export function TransformerCard({ transformer, transformers, onClick }: TransformerCardProps) {
   const isInBand =
     transformer.voltage >= transformer.voltageBand.lower && transformer.voltage <= transformer.voltageBand.upper
 
@@ -19,15 +21,25 @@ export function TransformerCard({ transformer, onClick }: TransformerCardProps) 
   return (
     <Card className="cursor-pointer transition-all hover:shadow-md" onClick={onClick}>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{transformer.name}</CardTitle>
-          <Badge
-            variant={
-              transformer.status === "normal" ? "success" : transformer.status === "warning" ? "warning" : "destructive"
-            }
-          >
-            {transformer.status}
-          </Badge>
+        <div className="flex items-start justify-between gap-2">
+          <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={15} />
+          <div className="flex justify-end">
+            <Badge
+              variant={
+                transformer.status === "normal"
+                  ? "success"
+                  : transformer.status === "warning"
+                    ? "warning"
+                    : "destructive"
+              }
+              className="flex items-center gap-1 flex-shrink-0"
+            >
+              {transformer.status === "normal" && <CheckCircle className="h-3 w-3" />}
+              {transformer.status === "warning" && <AlertTriangle className="h-3 w-3" />}
+              {transformer.status === "error" && <XCircle className="h-3 w-3" />}
+              {transformer.status.charAt(0).toUpperCase() + transformer.status.slice(1)}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -38,9 +50,14 @@ export function TransformerCard({ transformer, onClick }: TransformerCardProps) 
               {transformer.masterFollower
                 ? transformer.masterFollower.isMaster
                   ? "Master"
-                  : `Follower (of ${transformer.masterFollower.masterId})`
+                  : "Follower"
                 : transformer.mode.charAt(0).toUpperCase() + transformer.mode.slice(1)}
             </p>
+            {transformer.masterFollower?.isFollower && (
+              <p className="text-xs text-gray-400">
+                Following: {transformers.find((t) => t.id === transformer.masterFollower?.masterId)?.name || "Unknown"}
+              </p>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-xs text-gray-500">Tap Position</p>
