@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   AlertTriangle,
   ArrowDown,
@@ -12,6 +12,7 @@ import {
   Settings,
   Info,
   Wifi,
+  Clock,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,41 +26,125 @@ import { EnhancedVoltageChart } from "@/components/enhanced-voltage-chart"
 import { LogExportDialog } from "@/components/log-export-dialog"
 import { ExportManager } from "@/utils/export-helpers"
 import { TransformerNameChip } from "@/components/transformer-name-chip"
+import { useToast } from "@/hooks/use-toast"
 
 interface TransformerDetailProps {
   transformer: Transformer
   onClose: () => void
   onModeChange: (transformerId: string, mode: "auto" | "manual") => void
+  onTapChange: (transformerId: string, direction: "raise" | "lower") => Promise<void>
   transformers: Transformer[]
+  modeChangeLoading: Set<string>
+  tapChangeLoading: Set<string>
+  commandDelay: number
+  onCommandDelayChange: (delay: number) => void
+  getRemainingCooldown: (transformerId: string) => number
 }
 
-export function TransformerDetail({ transformer, onClose, onModeChange, transformers }: TransformerDetailProps) {
+export function TransformerDetail({
+  transformer,
+  onClose,
+  onModeChange,
+  onTapChange,
+  transformers,
+  modeChangeLoading,
+  tapChangeLoading,
+  commandDelay,
+  onCommandDelayChange,
+  getRemainingCooldown,
+}: TransformerDetailProps) {
   const [voltageBand, setVoltageBand] = useState({
     lower: transformer.voltageBand.lower,
     upper: transformer.voltageBand.upper,
   })
-
   const [showTapChangeExport, setShowTapChangeExport] = useState(false)
   const [showEventExport, setShowEventExport] = useState(false)
+  const [cooldownTimer, setCooldownTimer] = useState(0)
+  const [localCommandDelay, setLocalCommandDelay] = useState(commandDelay)
+  const { toast } = useToast()
+
+  const isModeChanging = modeChangeLoading.has(transformer.id)
+  const isTapChanging = tapChangeLoading.has(transformer.id)
+
+  // Update cooldown timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = getRemainingCooldown(transformer.id)
+      setCooldownTimer(remaining)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [transformer.id, getRemainingCooldown])
 
   const handleVoltageBandChange = () => {
     // In a real app, this would update the transformer's voltage band
     console.log("Updating voltage band:", voltageBand)
   }
 
-  const handleModeChange = (mode: "auto" | "manual") => {
-    onModeChange(transformer.id, mode)
+  const handleModeChange = async (mode: "auto" | "manual") => {
+    try {
+      await onModeChange(transformer.id, mode)
+      toast({
+        title: "Mode Changed",
+        description: `Transformer mode changed to ${mode}`,
+        duration: 3000,
+      })
+    } catch (error) {
+      toast({
+        title: "Mode Change Failed",
+        description: "Failed to change transformer mode",
+        variant: "destructive",
+        duration: 3000,
+      })
+    }
   }
 
-  const handleTapChange = (direction: "raise" | "lower") => {
+  const handleTapChange = async (direction: "raise" | "lower") => {
     // Check interlocks before allowing tap change
     if (Object.values(transformer.interlocks).some((value) => value)) {
-      console.log("Cannot change tap: interlock active")
+      toast({
+        title: "Command Blocked",
+        description: "Cannot change tap: interlock active",
+        variant: "destructive",
+        duration: 3000,
+      })
       return
     }
 
-    // In a real app, this would send a command to raise or lower the tap
-    console.log(`${direction === "raise" ? "Raising" : "Lowering"} tap for transformer ${transformer.id}`)
+    try {
+      await onTapChange(transformer.id, direction)
+      toast({
+        title: "Tap Changed",
+        description: `Tap ${direction}d successfully`,
+        duration: 3000,
+      })
+    } catch (error) {
+      toast({
+        title: "Command Failed",
+        description: error instanceof Error ? error.message : "Failed to change tap position",
+        variant: "destructive",
+        duration: 3000,
+      })
+    }
+  }
+
+  const handleCommandDelayChange = () => {
+    if (localCommandDelay >= 11) {
+      onCommandDelayChange(localCommandDelay)
+      toast({
+        title: "Settings Updated",
+        description: `Command delay updated to ${localCommandDelay} seconds`,
+        duration: 3000,
+      })
+    } else {
+      toast({
+        title: "Invalid Setting",
+        description: "Command delay cannot be less than 11 seconds",
+        variant: "destructive",
+        duration: 3000,
+      })
+      setLocalCommandDelay(commandDelay) // Reset to current value
+    }
   }
 
   const isInBand =
@@ -303,15 +388,31 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
                           variant={transformer.mode === "auto" ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleModeChange("auto")}
+                          disabled={isModeChanging}
                         >
-                          Auto Mode
+                          {isModeChanging && transformer.mode !== "auto" ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Switching...
+                            </>
+                          ) : (
+                            "Auto Mode"
+                          )}
                         </Button>
                         <Button
                           variant={transformer.mode === "manual" ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleModeChange("manual")}
+                          disabled={isModeChanging}
                         >
-                          Manual Mode
+                          {isModeChanging && transformer.mode !== "manual" ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Switching...
+                            </>
+                          ) : (
+                            "Manual Mode"
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -333,23 +434,57 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
                             Current Tap Position: {transformer.tapPosition} (Range: {transformer.tapLimits.min} -{" "}
                             {transformer.tapLimits.max})
                           </p>
+                          {cooldownTimer > 0 && (
+                            <div className="flex items-center gap-2 mt-2 text-sm text-orange-600">
+                              <Clock className="h-4 w-4" />
+                              <span>Next command available in {cooldownTimer} seconds</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center space-x-3">
                           <Button
                             size="sm"
                             onClick={() => handleTapChange("raise")}
-                            disabled={hasActiveInterlock || transformer.tapPosition >= transformer.tapLimits.max}
+                            disabled={
+                              hasActiveInterlock ||
+                              transformer.tapPosition >= transformer.tapLimits.max ||
+                              isTapChanging ||
+                              cooldownTimer > 0
+                            }
                           >
-                            <ArrowUp className="mr-2 h-4 w-4" />
-                            Raise Tap
+                            {isTapChanging ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Raising...
+                              </>
+                            ) : (
+                              <>
+                                <ArrowUp className="mr-2 h-4 w-4" />
+                                Raise Tap
+                              </>
+                            )}
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => handleTapChange("lower")}
-                            disabled={hasActiveInterlock || transformer.tapPosition <= transformer.tapLimits.min}
+                            disabled={
+                              hasActiveInterlock ||
+                              transformer.tapPosition <= transformer.tapLimits.min ||
+                              isTapChanging ||
+                              cooldownTimer > 0
+                            }
                           >
-                            <ArrowDown className="mr-2 h-4 w-4" />
-                            Lower Tap
+                            {isTapChanging ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Lowering...
+                              </>
+                            ) : (
+                              <>
+                                <ArrowDown className="mr-2 h-4 w-4" />
+                                Lower Tap
+                              </>
+                            )}
                           </Button>
                         </div>
                         {hasActiveInterlock && (
@@ -411,14 +546,30 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
                     <Button
                       variant={transformer.mode === "auto" ? "default" : "outline"}
                       onClick={() => handleModeChange("auto")}
+                      disabled={isModeChanging}
                     >
-                      Auto Mode
+                      {isModeChanging && transformer.mode !== "auto" ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Switching...
+                        </>
+                      ) : (
+                        "Auto Mode"
+                      )}
                     </Button>
                     <Button
                       variant={transformer.mode === "manual" ? "default" : "outline"}
                       onClick={() => handleModeChange("manual")}
+                      disabled={isModeChanging}
                     >
-                      Manual Mode
+                      {isModeChanging && transformer.mode !== "manual" ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Switching...
+                        </>
+                      ) : (
+                        "Manual Mode"
+                      )}
                     </Button>
                   </div>
                 )}
@@ -440,21 +591,55 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
                       Current Tap Position: {transformer.tapPosition} (Range: {transformer.tapLimits.min} -{" "}
                       {transformer.tapLimits.max})
                     </p>
+                    {cooldownTimer > 0 && (
+                      <div className="flex items-center gap-2 mt-2 text-sm text-orange-600">
+                        <Clock className="h-4 w-4" />
+                        <span>Next command available in {cooldownTimer} seconds</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-4">
                     <Button
                       onClick={() => handleTapChange("raise")}
-                      disabled={hasActiveInterlock || transformer.tapPosition >= transformer.tapLimits.max}
+                      disabled={
+                        hasActiveInterlock ||
+                        transformer.tapPosition >= transformer.tapLimits.max ||
+                        isTapChanging ||
+                        cooldownTimer > 0
+                      }
                     >
-                      <ArrowUp className="mr-2 h-4 w-4" />
-                      Raise Tap
+                      {isTapChanging ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Raising...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowUp className="mr-2 h-4 w-4" />
+                          Raise Tap
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={() => handleTapChange("lower")}
-                      disabled={hasActiveInterlock || transformer.tapPosition <= transformer.tapLimits.min}
+                      disabled={
+                        hasActiveInterlock ||
+                        transformer.tapPosition <= transformer.tapLimits.min ||
+                        isTapChanging ||
+                        cooldownTimer > 0
+                      }
                     >
-                      <ArrowDown className="mr-2 h-4 w-4" />
-                      Lower Tap
+                      {isTapChanging ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Lowering...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="mr-2 h-4 w-4" />
+                          Lower Tap
+                        </>
+                      )}
                     </Button>
                   </div>
                   {hasActiveInterlock && (
@@ -556,8 +741,21 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="min-delay">Minimum Delay Between Commands (seconds)</Label>
-                    <Input id="min-delay" type="number" className="w-24" defaultValue="11" />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="min-delay"
+                        type="number"
+                        className="w-24"
+                        value={localCommandDelay}
+                        onChange={(e) => setLocalCommandDelay(Number(e.target.value))}
+                        min={11}
+                      />
+                      <Button size="sm" onClick={handleCommandDelayChange}>
+                        Save
+                      </Button>
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-500">Minimum allowed delay is 11 seconds</p>
                   <div className="flex items-center space-x-2">
                     <Switch id="log-commands" defaultChecked />
                     <Label htmlFor="log-commands">Log All Tap Change Commands</Label>
@@ -718,5 +916,5 @@ export function TransformerDetail({ transformer, onClose, onModeChange, transfor
           />
         </DialogContent>
       </Dialog>
-    )
+    );
   }

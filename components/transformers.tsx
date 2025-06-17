@@ -12,15 +12,30 @@ import { useToast } from "@/hooks/use-toast"
 import { Save, AlertTriangle } from "lucide-react"
 
 export function Transformers() {
-  const { transformers, updateTransformerMode, updateMasterFollower, saveChanges, hasUnsavedChanges } =
-    useTransformers()
+  const {
+    transformers,
+    updateTransformerMode,
+    updateTapPosition,
+    updateMasterFollower,
+    updateCommandDelay,
+    saveChanges,
+    hasUnsavedChanges,
+    modeChangeLoading,
+    tapChangeLoading,
+    commandDelay,
+    getRemainingCooldown,
+  } = useTransformers()
   const [selectedTransformer, setSelectedTransformer] = useState<string | null>(null)
   const [showMasterFollowerConfig, setShowMasterFollowerConfig] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
-  const handleModeChange = (transformerId: string, mode: "auto" | "manual") => {
-    updateTransformerMode(transformerId, mode)
+  const handleModeChange = async (transformerId: string, mode: "auto" | "manual") => {
+    await updateTransformerMode(transformerId, mode)
+  }
+
+  const handleTapChange = async (transformerId: string, direction: "raise" | "lower") => {
+    await updateTapPosition(transformerId, direction)
   }
 
   const handleMasterFollowerChange = (masterId: string, followerIds: string[]) => {
@@ -112,6 +127,12 @@ export function Transformers() {
           transformers={transformers}
           onClose={() => setSelectedTransformer(null)}
           onModeChange={handleModeChange}
+          onTapChange={handleTapChange}
+          modeChangeLoading={modeChangeLoading}
+          tapChangeLoading={tapChangeLoading}
+          commandDelay={commandDelay}
+          onCommandDelayChange={updateCommandDelay}
+          getRemainingCooldown={getRemainingCooldown}
         />
       )}
 

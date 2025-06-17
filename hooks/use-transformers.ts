@@ -143,16 +143,88 @@ export function useTransformers() {
   const [transformers, setTransformers] = useState<Transformer[]>(initialTransformers)
   const [savedTransformers, setSavedTransformers] = useState<Transformer[]>(initialTransformers)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [modeChangeLoading, setModeChangeLoading] = useState<Set<string>>(new Set())
+  const [tapChangeLoading, setTapChangeLoading] = useState<Set<string>>(new Set())
+  const [lastTapChangeTime, setLastTapChangeTime] = useState<Map<string, number>>(new Map())
+  const [commandDelay, setCommandDelay] = useState(11) // Default 11 seconds
 
-  const updateTransformerMode = useCallback((transformerId: string, mode: "auto" | "manual") => {
-    setTransformers((prev) => {
-      const updated = prev.map((transformer) =>
-        transformer.id === transformerId ? { ...transformer, mode } : transformer,
-      )
-      setHasUnsavedChanges(true)
-      return updated
-    })
+  const updateTransformerMode = useCallback(async (transformerId: string, mode: "auto" | "manual") => {
+    // Set loading state
+    setModeChangeLoading((prev) => new Set(prev).add(transformerId))
+
+    try {
+      // 5 second delay for mode change
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+
+      setTransformers((prev) => {
+        const updated = prev.map((transformer) =>
+          transformer.id === transformerId ? { ...transformer, mode } : transformer,
+        )
+        setHasUnsavedChanges(true)
+        return updated
+      })
+    } finally {
+      // Remove loading state
+      setModeChangeLoading((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(transformerId)
+        return newSet
+      })
+    }
   }, [])
+
+  const updateTapPosition = useCallback(
+    async (transformerId: string, direction: "raise" | "lower") => {
+      const now = Date.now()
+      const lastTime = lastTapChangeTime.get(transformerId) || 0
+      const timeSinceLastCommand = now - lastTime
+
+      // Check if enough time has passed since last command
+      if (timeSinceLastCommand < commandDelay * 1000) {
+        const remainingTime = Math.ceil((commandDelay * 1000 - timeSinceLastCommand) / 1000)
+        throw new Error(`Please wait ${remainingTime} more seconds before next command`)
+      }
+
+      // Set loading state
+      setTapChangeLoading((prev) => new Set(prev).add(transformerId))
+
+      try {
+        // Simulate command execution time (2 seconds)
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        setTransformers((prev) => {
+          const updated = prev.map((transformer) => {
+            if (transformer.id === transformerId) {
+              const currentPosition = transformer.tapPosition
+              let newPosition = currentPosition
+
+              if (direction === "raise" && currentPosition < transformer.tapLimits.max) {
+                newPosition = currentPosition + 1
+              } else if (direction === "lower" && currentPosition > transformer.tapLimits.min) {
+                newPosition = currentPosition - 1
+              }
+
+              return { ...transformer, tapPosition: newPosition }
+            }
+            return transformer
+          })
+          setHasUnsavedChanges(true)
+          return updated
+        })
+
+        // Update last command time
+        setLastTapChangeTime((prev) => new Map(prev).set(transformerId, now))
+      } finally {
+        // Remove loading state
+        setTapChangeLoading((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(transformerId)
+          return newSet
+        })
+      }
+    },
+    [commandDelay, lastTapChangeTime],
+  )
 
   const updateMasterFollower = useCallback((masterId: string, followerIds: string[]) => {
     setTransformers((prev) => {
@@ -201,6 +273,24 @@ export function useTransformers() {
     })
   }, [])
 
+  const updateCommandDelay = useCallback((newDelay: number) => {
+    if (newDelay >= 11) {
+      setCommandDelay(newDelay)
+      setHasUnsavedChanges(true)
+    }
+  }, [])
+
+  const getRemainingCooldown = useCallback(
+    (transformerId: string) => {
+      const now = Date.now()
+      const lastTime = lastTapChangeTime.get(transformerId) || 0
+      const timeSinceLastCommand = now - lastTime
+      const remainingTime = Math.max(0, commandDelay * 1000 - timeSinceLastCommand)
+      return Math.ceil(remainingTime / 1000)
+    },
+    [commandDelay, lastTapChangeTime],
+  )
+
   const saveChanges = useCallback(async () => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -215,8 +305,14 @@ export function useTransformers() {
   return {
     transformers,
     updateTransformerMode,
+    updateTapPosition,
     updateMasterFollower,
+    updateCommandDelay,
     saveChanges,
     hasUnsavedChanges,
+    modeChangeLoading,
+    tapChangeLoading,
+    commandDelay,
+    getRemainingCooldown,
   }
 }
