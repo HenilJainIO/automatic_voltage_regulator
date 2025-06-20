@@ -277,24 +277,25 @@ export function TransformerDetail({
 
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>Transformer Details:</span>
-            <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={25} />
-          </DialogTitle>
-        </DialogHeader>
-
-        <Tabs defaultValue="overview">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full p-0 flex flex-col">
+        <div className="px-6 pt-6 pb-2 border-b">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-2 flex-wrap">
+              <span>Transformer Details:</span>
+              <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={25} />
+            </DialogTitle>
+          </DialogHeader>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="control">Control</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
+        </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <TabsContent value="overview" className="space-y-4 pt-4 m-0">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <Tabs defaultValue="overview" className="flex flex-col h-full">
+            <TabsContent value="overview" className="space-y-4 pt-4 m-0 h-full">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="rounded-lg border p-4">
                   <h3 className="mb-4 text-lg font-medium">Status</h3>
@@ -503,7 +504,7 @@ export function TransformerDetail({
               </div>
             </TabsContent>
 
-            <TabsContent value="control" className="space-y-4 pt-4 m-0">
+            <TabsContent value="control" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Operation Mode</h3>
 
@@ -669,7 +670,7 @@ export function TransformerDetail({
               )}
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4 pt-4 m-0">
+            <TabsContent value="settings" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Voltage Band Configuration</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -764,7 +765,7 @@ export function TransformerDetail({
               </div>
             </TabsContent>
 
-            <TabsContent value="history" className="space-y-4 pt-4 m-0">
+            <TabsContent value="history" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium">Tap Change Log</h3>
@@ -895,24 +896,24 @@ export function TransformerDetail({
                 </div>
               </div>
             </TabsContent>
-          </div>
+          </Tabs>
+        </div>
 
-          <LogExportDialog
-            isOpen={showTapChangeExport}
-            onClose={() => setShowTapChangeExport(false)}
-            logType="tap-change"
-            transformerName={transformer.name}
-            onExport={handleTapChangeExport}
-          />
+        <LogExportDialog
+          isOpen={showTapChangeExport}
+          onClose={() => setShowTapChangeExport(false)}
+          logType="tap-change"
+          transformerName={transformer.name}
+          onExport={handleTapChangeExport}
+        />
 
-          <LogExportDialog
-            isOpen={showEventExport}
-            onClose={() => setShowEventExport(false)}
-            logType="event"
-            transformerName={transformer.name}
-            onExport={handleEventExport}
-          />
-        </Tabs>
+        <LogExportDialog
+          isOpen={showEventExport}
+          onClose={() => setShowEventExport(false)}
+          logType="event"
+          transformerName={transformer.name}
+          onExport={handleEventExport}
+        />
       </DialogContent>
     </Dialog>
   )

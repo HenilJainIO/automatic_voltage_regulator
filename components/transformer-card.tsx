@@ -19,11 +19,11 @@ export function TransformerCard({ transformer, transformers, onClick }: Transfor
   const hasActiveInterlock = Object.values(transformer.interlocks).some((value) => value)
 
   return (
-    <Card className="cursor-pointer transition-all hover:shadow-md" onClick={onClick}>
+    <Card className="cursor-pointer transition-all hover:shadow-md w-full" onClick={onClick}>
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={15} />
-          <div className="flex justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={15} className="flex-1" />
+          <div className="flex justify-start sm:justify-end">
             <Badge
               variant={
                 transformer.status === "normal"
@@ -79,16 +79,16 @@ export function TransformerCard({ transformer, transformers, onClick }: Transfor
         </div>
       </CardContent>
       <CardFooter className="border-t pt-4">
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1">
-            <Activity className="h-4 w-4 text-gray-500" />
+            <Activity className="h-4 w-4 text-gray-500 flex-shrink-0" />
             <span className="text-sm text-gray-600">Last tap change: 5m ago</span>
           </div>
           <div className="flex items-center gap-1">
             {hasActiveInterlock ? (
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
             ) : (
-              <Check className="h-4 w-4 text-green-500" />
+              <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
             )}
             <span className="text-sm text-gray-600">{hasActiveInterlock ? "Interlock active" : "Ready"}</span>
           </div>

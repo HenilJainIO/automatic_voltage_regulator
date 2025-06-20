@@ -179,7 +179,7 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
   return (
     <div className="space-y-4">
       {/* Time Range Controls */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center">
         <div className="flex flex-wrap gap-2">
           {["1h", "6h", "24h", "7d"].map((range) => (
             <Button
@@ -187,7 +187,7 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
               variant={selectedTimeRange === range ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedTimeRange(range)}
-              className="min-w-[60px]"
+              className="min-w-[60px] flex-1 sm:flex-none"
             >
               {range}
             </Button>
@@ -196,40 +196,44 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
             variant={selectedTimeRange === "custom" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedTimeRange("custom")}
-            className="min-w-[80px]"
+            className="min-w-[80px] flex-1 sm:flex-none"
           >
             Custom
           </Button>
         </div>
 
         {selectedTimeRange === "custom" && (
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-            <Label htmlFor="start-time" className="text-sm whitespace-nowrap">
-              From:
-            </Label>
-            <Input
-              id="start-time"
-              type="datetime-local"
-              value={customStartTime}
-              onChange={(e) => setCustomStartTime(e.target.value)}
-              className="w-full sm:w-48"
-            />
-            <Label htmlFor="end-time" className="text-sm whitespace-nowrap">
-              To:
-            </Label>
-            <Input
-              id="end-time"
-              type="datetime-local"
-              value={customEndTime}
-              onChange={(e) => setCustomEndTime(e.target.value)}
-              className="w-full sm:w-48"
-            />
+          <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:w-auto">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="start-time" className="text-sm whitespace-nowrap">
+                From:
+              </Label>
+              <Input
+                id="start-time"
+                type="datetime-local"
+                value={customStartTime}
+                onChange={(e) => setCustomStartTime(e.target.value)}
+                className="flex-1 sm:w-48"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="end-time" className="text-sm whitespace-nowrap">
+                To:
+              </Label>
+              <Input
+                id="end-time"
+                type="datetime-local"
+                value={customEndTime}
+                onChange={(e) => setCustomEndTime(e.target.value)}
+                className="flex-1 sm:w-48"
+              />
+            </div>
           </div>
         )}
       </div>
 
       {/* Chart */}
-      <div className="h-64 w-full relative overflow-hidden">
+      <div className="h-64 w-full relative overflow-hidden min-h-[200px] sm:h-64">
         <Line data={data} options={options} />
 
         {/* Tap Change Markers */}
@@ -268,20 +272,28 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
           ) : (
             <div className="space-y-1">
               {tapChangeEvents.map((event, index) => (
-                <div key={index} className="flex items-center justify-between text-sm p-2 hover:bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={index}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm p-2 hover:bg-gray-50 rounded gap-2"
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
                     {event.direction === "raise" ? (
-                      <ArrowUp className="h-3 w-3 text-green-600" />
+                      <ArrowUp className="h-3 w-3 text-green-600 flex-shrink-0" />
                     ) : (
-                      <ArrowDown className="h-3 w-3 text-red-600" />
+                      <ArrowDown className="h-3 w-3 text-red-600 flex-shrink-0" />
                     )}
-                    <span>{event.time}</span>
-                    <span>
+                    <span className="whitespace-nowrap">{event.time}</span>
+                    <span className="text-xs sm:text-sm">
                       Tap {event.direction} to position {event.tapPosition}
                     </span>
-                    {event.annotation && <span className="text-blue-600">({event.annotation})</span>}
+                    {event.annotation && <span className="text-blue-600 text-xs">({event.annotation})</span>}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setShowAnnotationDialog(index)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAnnotationDialog(index)}
+                    className="self-start sm:self-center"
+                  >
                     <MessageSquare className="h-3 w-3" />
                   </Button>
                 </div>

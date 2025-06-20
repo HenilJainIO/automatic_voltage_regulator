@@ -77,7 +77,7 @@ export function LogExportDialog({ isOpen, onClose, logType, transformerName, onE
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] w-full overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-w-[95vw] max-h-[90vh] w-full overflow-hidden flex flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -85,7 +85,7 @@ export function LogExportDialog({ isOpen, onClose, logType, transformerName, onE
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 px-1">
           {/* Format Selection */}
           <div>
             <Label className="text-base font-medium">Export Format</Label>
@@ -141,7 +141,7 @@ export function LogExportDialog({ isOpen, onClose, logType, transformerName, onE
           {/* Column Selection */}
           <div>
             <Label className="text-base font-medium">Columns to Include</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-32 overflow-y-auto border rounded p-2">
               {availableColumns.map((column) => (
                 <div key={column} className="flex items-center space-x-2">
                   <Checkbox

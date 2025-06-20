@@ -66,11 +66,15 @@ export function Transformers() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold text-gray-800">Transformer Management</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           {hasUnsavedChanges && (
-            <Button onClick={handleSaveChanges} disabled={isSaving} className="flex items-center gap-2">
+            <Button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className="flex items-center gap-2 w-full sm:w-auto"
+            >
               {isSaving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -84,14 +88,16 @@ export function Transformers() {
               )}
             </Button>
           )}
-          <Button onClick={() => setShowMasterFollowerConfig(true)}>Configure Master-Follower</Button>
+          <Button onClick={() => setShowMasterFollowerConfig(true)} className="w-full sm:w-auto">
+            Configure Master-Follower
+          </Button>
         </div>
       </div>
 
       {hasUnsavedChanges && (
         <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
             <p className="text-sm text-yellow-800">
               You have unsaved changes. Click "Save Changes" to persist your modifications.
             </p>
@@ -105,7 +111,7 @@ export function Transformers() {
           <TabsTrigger value="list">List View</TabsTrigger>
         </TabsList>
         <TabsContent value="grid" className="mt-4">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
             {transformers.map((transformer) => (
               <TransformerCard
                 key={transformer.id}
