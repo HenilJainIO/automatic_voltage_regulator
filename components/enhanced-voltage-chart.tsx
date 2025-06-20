@@ -16,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowUp, ArrowDown, MessageSquare } from "lucide-react"
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -236,46 +235,6 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
       <div className="relative">
         <div className="h-64 w-full relative overflow-hidden min-h-[200px] sm:h-64 border rounded-lg bg-white">
           <Line data={data} options={options} />
-        </div>
-      </div>
-
-      {/* Tap Change Events List - Moved outside chart container */}
-      <div className="rounded-lg border p-4 bg-white">
-        <h4 className="font-medium mb-2">Tap Change Events</h4>
-        <div className="max-h-32 overflow-y-auto">
-          {tapChangeEvents.length === 0 ? (
-            <p className="text-sm text-gray-500">No tap changes in selected time range</p>
-          ) : (
-            <div className="space-y-1">
-              {tapChangeEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm p-2 hover:bg-gray-50 rounded gap-2"
-                >
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {event.direction === "raise" ? (
-                      <ArrowUp className="h-3 w-3 text-green-600 flex-shrink-0" />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 text-red-600 flex-shrink-0" />
-                    )}
-                    <span className="whitespace-nowrap">{event.time}</span>
-                    <span className="text-xs sm:text-sm">
-                      Tap {event.direction} to position {event.tapPosition}
-                    </span>
-                    {event.annotation && <span className="text-blue-600 text-xs">({event.annotation})</span>}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAnnotationDialog(index)}
-                    className="self-start sm:self-center"
-                  >
-                    <MessageSquare className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
