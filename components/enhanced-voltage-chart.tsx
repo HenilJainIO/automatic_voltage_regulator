@@ -232,39 +232,15 @@ export function EnhancedVoltageChart({ voltageBand, currentVoltage }: EnhancedVo
         )}
       </div>
 
-      {/* Chart */}
-      <div className="h-64 w-full relative overflow-hidden min-h-[200px] sm:h-64">
-        <Line data={data} options={options} />
-
-        {/* Tap Change Markers */}
-        {tapChangeEvents.map((event, index) => {
-          const labelIndex = labels.findIndex((label) => label === event.time)
-          if (labelIndex === -1) return null
-
-          const xPosition = (labelIndex / (labels.length - 1)) * 100
-
-          return (
-            <div
-              key={index}
-              className="absolute top-4 cursor-pointer"
-              style={{ left: `${xPosition}%`, transform: "translateX(-50%)" }}
-              onClick={() => setShowAnnotationDialog(index)}
-            >
-              <div className="flex flex-col items-center">
-                {event.direction === "raise" ? (
-                  <ArrowUp className="h-4 w-4 text-green-600" />
-                ) : (
-                  <ArrowDown className="h-4 w-4 text-red-600" />
-                )}
-                {event.annotation && <MessageSquare className="h-3 w-3 text-blue-600 mt-1" />}
-              </div>
-            </div>
-          )
-        })}
+      {/* Chart Container with proper containment */}
+      <div className="relative">
+        <div className="h-64 w-full relative overflow-hidden min-h-[200px] sm:h-64 border rounded-lg bg-white">
+          <Line data={data} options={options} />
+        </div>
       </div>
 
-      {/* Tap Change Events List */}
-      <div className="rounded-lg border p-4">
+      {/* Tap Change Events List - Moved outside chart container */}
+      <div className="rounded-lg border p-4 bg-white">
         <h4 className="font-medium mb-2">Tap Change Events</h4>
         <div className="max-h-32 overflow-y-auto">
           {tapChangeEvents.length === 0 ? (
