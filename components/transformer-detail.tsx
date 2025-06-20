@@ -285,16 +285,20 @@ export function TransformerDetail({
               <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={25} />
             </DialogTitle>
           </DialogHeader>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="control">Control</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           <Tabs defaultValue="overview" className="flex flex-col h-full">
+            {/* Tabs navigation */}
+            <div className="border-b px-6 pt-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="control">Control</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+            </div>
+
             <TabsContent value="overview" className="space-y-4 pt-4 m-0 h-full">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="rounded-lg border p-4">
