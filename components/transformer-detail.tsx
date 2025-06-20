@@ -359,13 +359,6 @@ export function TransformerDetail({
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-4 text-lg font-medium">Voltage Trend</h3>
-                <div className="min-h-[300px] max-h-[400px]">
-                  <EnhancedVoltageChart voltageBand={transformer.voltageBand} currentVoltage={transformer.voltage} />
-                </div>
-              </div>
-
-              <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Quick Controls</h3>
 
                 {transformer.masterFollower?.isFollower ? (
@@ -505,6 +498,13 @@ export function TransformerDetail({
                     )}
                   </div>
                 )}
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-4 text-lg font-medium">Voltage Trend</h3>
+                <div className="min-h-[300px] max-h-[400px]">
+                  <EnhancedVoltageChart voltageBand={transformer.voltageBand} currentVoltage={transformer.voltage} />
+                </div>
               </div>
             </TabsContent>
 
