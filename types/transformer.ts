@@ -3,6 +3,9 @@ export interface Interlocks {
   tapChangerStuck: boolean
   motorFault: boolean
   manualLock: boolean
+  tcInRemote: boolean
+  tcControlSupplyFail: boolean
+  overCurrent: boolean
 }
 
 export interface MasterFollower {
@@ -15,6 +18,19 @@ export interface MasterFollower {
 export interface TapLimits {
   min: number
   max: number
+}
+
+export interface ToleranceBand {
+  referenceVoltage: number // kV
+  tolerancePercentage: number // 0.5% to 5%
+  lowerLimit: number // calculated
+  upperLimit: number // calculated
+}
+
+export interface CurrentRating {
+  ratedCurrent: number // Amperes
+  overCurrentLimit: number // Amperes (user selectable)
+  currentValue: number // Current measured value
 }
 
 export type TransformerType = "Individual" | "Master" | "Follower"
@@ -31,8 +47,12 @@ export interface Transformer {
     lower: number
     upper: number
   }
+  toleranceBand: ToleranceBand
+  currentRating: CurrentRating
   voltageSource: "relay" | "mfm"
   interlocks: Interlocks
   masterFollower: MasterFollower | null
   type: TransformerType
+  isLive: boolean // Reference or rated voltage is present
+  voltageSignalValid: boolean // Voltage signal availability
 }

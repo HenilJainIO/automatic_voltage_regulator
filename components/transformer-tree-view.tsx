@@ -57,8 +57,8 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
   return (
     <div className="rounded-lg border overflow-hidden">
       {/* Header */}
-      <div className="bg-gray-50 border-b">
-        <div className="grid grid-cols-12 gap-4 p-4 font-medium text-sm text-gray-700">
+      <div className="bg-gray-50 border-b hidden md:block">
+        <div className="grid grid-cols-12 gap-2 lg:gap-4 p-4 font-medium text-sm text-gray-700">
           <div className="col-span-3">Name</div>
           <div className="col-span-1 text-center">Type</div>
           <div className="col-span-1 text-center">Mode</div>
@@ -81,7 +81,8 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
             <div key={master.id}>
               {/* Master Row */}
               <div className="hover:bg-gray-50 transition-colors">
-                <div className="grid grid-cols-12 gap-4 p-4 items-center">
+                {/* Desktop Layout */}
+                <div className="hidden md:grid grid-cols-12 gap-2 lg:gap-4 p-4 items-center">
                   <div className="col-span-3 flex items-center gap-2">
                     <button
                       onClick={() => toggleMaster(master.id)}
@@ -124,6 +125,59 @@ export function TransformerTreeView({ transformers, onTransformerSelect }: Trans
                     <Button variant="outline" size="sm" onClick={() => onTransformerSelect(master.id)}>
                       Details
                     </Button>
+                  </div>
+                </div>
+
+                {/* Mobile Layout */}
+                <div className="md:hidden p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleMaster(master.id)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      >
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </button>
+                      <span className="font-medium truncate" title={master.name}>
+                        {master.name.length > 20 ? `${master.name.substring(0, 20)}...` : master.name}
+                      </span>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => onTransformerSelect(master.id)}>
+                      Details
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Type:</span>
+                      <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Master
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Mode:</span>
+                      <span className="ml-2">{master.mode.charAt(0).toUpperCase() + master.mode.slice(1)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Voltage:</span>
+                      <span className="ml-2 font-medium">{master.voltage} V</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Tap:</span>
+                      <span className="ml-2 font-medium">{master.tapPosition}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className={getStatusBadge(master.status)}>
+                      {getStatusIcon(master.status)}
+                      {master.status.charAt(0).toUpperCase() + master.status.slice(1)}
+                    </span>
+                    <div className="flex items-center gap-1 text-yellow-600">
+                      <Crown className="h-4 w-4" />
+                      <span className="text-xs font-medium">Master</span>
+                    </div>
                   </div>
                 </div>
               </div>

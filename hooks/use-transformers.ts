@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import type { Transformer, TransformerType } from "@/types/transformer"
+import type { Transformer, TransformerType, ToleranceBand } from "@/types/transformer"
 
 // Helper function to determine transformer type
 const getTransformerType = (transformer: Partial<Transformer>): TransformerType => {
@@ -10,7 +10,7 @@ const getTransformerType = (transformer: Partial<Transformer>): TransformerType 
   return "Individual"
 }
 
-// Mock data for transformers
+// Mock data for transformers - Updated with new fields
 const initialTransformers: Transformer[] = [
   {
     id: "t1",
@@ -27,23 +27,39 @@ const initialTransformers: Transformer[] = [
       lower: 209,
       upper: 231,
     },
+    toleranceBand: {
+      referenceVoltage: 220, // kV
+      tolerancePercentage: 2.5,
+      lowerLimit: 214.5, // 220 - (220 * 0.025)
+      upperLimit: 225.5, // 220 + (220 * 0.025)
+    },
+    currentRating: {
+      ratedCurrent: 1000,
+      overCurrentLimit: 800,
+      currentValue: 650,
+    },
     voltageSource: "relay",
     interlocks: {
       tapChangerInProgress: false,
       tapChangerStuck: false,
       motorFault: false,
       manualLock: false,
+      tcInRemote: true,
+      tcControlSupplyFail: false,
+      overCurrent: false,
     },
     masterFollower: null,
     type: "Individual",
+    isLive: true,
+    voltageSignalValid: true,
   },
   {
     id: "t2",
     name: "Secondary Power Transformer Station 2",
     mode: "manual",
-    status: "warning",
-    voltage: 235,
-    tapPosition: 9,
+    status: "normal",
+    voltage: 220,
+    tapPosition: 5,
     tapLimits: {
       min: 1,
       max: 10,
@@ -52,15 +68,31 @@ const initialTransformers: Transformer[] = [
       lower: 209,
       upper: 231,
     },
+    toleranceBand: {
+      referenceVoltage: 220,
+      tolerancePercentage: 2.5,
+      lowerLimit: 214.5,
+      upperLimit: 225.5,
+    },
+    currentRating: {
+      ratedCurrent: 1000,
+      overCurrentLimit: 800,
+      currentValue: 720,
+    },
     voltageSource: "mfm",
     interlocks: {
       tapChangerInProgress: false,
-      tapChangerStuck: true,
+      tapChangerStuck: false,
       motorFault: false,
       manualLock: false,
+      tcInRemote: true,
+      tcControlSupplyFail: false,
+      overCurrent: false,
     },
     masterFollower: null,
     type: "Individual",
+    isLive: true,
+    voltageSignalValid: true,
   },
   {
     id: "t3",
@@ -77,15 +109,31 @@ const initialTransformers: Transformer[] = [
       lower: 209,
       upper: 231,
     },
+    toleranceBand: {
+      referenceVoltage: 220,
+      tolerancePercentage: 2.5,
+      lowerLimit: 214.5,
+      upperLimit: 225.5,
+    },
+    currentRating: {
+      ratedCurrent: 1000,
+      overCurrentLimit: 800,
+      currentValue: 650,
+    },
     voltageSource: "relay",
     interlocks: {
       tapChangerInProgress: false,
       tapChangerStuck: false,
       motorFault: false,
       manualLock: false,
+      tcInRemote: true,
+      tcControlSupplyFail: false,
+      overCurrent: false,
     },
     masterFollower: null,
     type: "Individual",
+    isLive: true,
+    voltageSignalValid: true,
   },
   {
     id: "t4",
@@ -102,15 +150,31 @@ const initialTransformers: Transformer[] = [
       lower: 209,
       upper: 231,
     },
+    toleranceBand: {
+      referenceVoltage: 220,
+      tolerancePercentage: 2.5,
+      lowerLimit: 214.5,
+      upperLimit: 225.5,
+    },
+    currentRating: {
+      ratedCurrent: 1000,
+      overCurrentLimit: 800,
+      currentValue: 900,
+    },
     voltageSource: "relay",
     interlocks: {
       tapChangerInProgress: true,
       tapChangerStuck: false,
       motorFault: true,
       manualLock: false,
+      tcInRemote: true,
+      tcControlSupplyFail: false,
+      overCurrent: true,
     },
     masterFollower: null,
     type: "Individual",
+    isLive: true,
+    voltageSignalValid: true,
   },
   {
     id: "t5",
@@ -127,17 +191,112 @@ const initialTransformers: Transformer[] = [
       lower: 209,
       upper: 231,
     },
+    toleranceBand: {
+      referenceVoltage: 220,
+      tolerancePercentage: 2.5,
+      lowerLimit: 214.5,
+      upperLimit: 225.5,
+    },
+    currentRating: {
+      ratedCurrent: 1000,
+      overCurrentLimit: 800,
+      currentValue: 750,
+    },
     voltageSource: "mfm",
     interlocks: {
       tapChangerInProgress: false,
       tapChangerStuck: false,
       motorFault: false,
       manualLock: false,
+      tcInRemote: true,
+      tcControlSupplyFail: false,
+      overCurrent: false,
     },
     masterFollower: null,
     type: "Individual",
+    isLive: true,
+    voltageSignalValid: true,
   },
 ]
+
+// Add helper functions for AVR logic
+const calculateToleranceBand = (referenceVoltage: number, tolerancePercentage: number) => {
+  const tolerance = referenceVoltage * (tolerancePercentage / 100)
+  return {
+    lowerLimit: referenceVoltage - tolerance,
+    upperLimit: referenceVoltage + tolerance,
+  }
+}
+
+const checkVoltageInToleranceBand = (voltage: number, toleranceBand: ToleranceBand) => {
+  return voltage >= toleranceBand.lowerLimit && voltage <= toleranceBand.upperLimit
+}
+
+const checkOverCurrent = (currentValue: number, overCurrentLimit: number) => {
+  return currentValue > overCurrentLimit
+}
+
+const canIssueCommand = (transformer: Transformer, direction: "raise" | "lower") => {
+  // Rule 1: Tap position limits
+  if (direction === "lower" && transformer.tapPosition <= transformer.tapLimits.min) {
+    return { allowed: false, reason: "Cannot lower tap: already at minimum position" }
+  }
+  if (direction === "raise" && transformer.tapPosition >= transformer.tapLimits.max) {
+    return { allowed: false, reason: "Cannot raise tap: already at maximum position" }
+  }
+
+  // Rule 2: Follower in manual mode
+  if (transformer.masterFollower?.isFollower && transformer.mode === "manual") {
+    return { allowed: false, reason: "Cannot issue command: Follower in manual mode" }
+  }
+
+  // Rule 4: TC In Remote check
+  if (!transformer.interlocks.tcInRemote) {
+    return { allowed: false, reason: "TC In Remote is Low - commands blocked" }
+  }
+
+  // Rule 5: TC error conditions
+  if (
+    transformer.interlocks.tapChangerInProgress ||
+    transformer.interlocks.tapChangerStuck ||
+    transformer.interlocks.motorFault
+  ) {
+    return { allowed: false, reason: "TC error/in progress/motor fault - commands blocked" }
+  }
+
+  // Rule 6: TC Control Supply Fail
+  if (transformer.interlocks.tcControlSupplyFail) {
+    return { allowed: false, reason: "TC Control Supply Fail - commands blocked" }
+  }
+
+  // Rule 7: Tolerance band check
+  const inToleranceBand = checkVoltageInToleranceBand(transformer.voltage, transformer.toleranceBand)
+  if (inToleranceBand) {
+    return { allowed: false, reason: "Voltage within tolerance band - no command needed" }
+  }
+
+  // Rule 8: Overcurrent check (both overcurrent limit and rated current)
+  if (
+    transformer.interlocks.overCurrent ||
+    checkOverCurrent(transformer.currentRating.currentValue, transformer.currentRating.overCurrentLimit) ||
+    transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
+  ) {
+    return {
+      allowed: false,
+      reason:
+        transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
+          ? `Current exceeds rated value (${transformer.currentRating.currentValue}A > ${transformer.currentRating.ratedCurrent}A)`
+          : "Overcurrent condition - commands blocked",
+    }
+  }
+
+  // Rule 11: Voltage signal validity
+  if (!transformer.voltageSignalValid) {
+    return { allowed: false, reason: "Invalid voltage signal - commands blocked" }
+  }
+
+  return { allowed: true, reason: "" }
+}
 
 export function useTransformers() {
   const [transformers, setTransformers] = useState<Transformer[]>(initialTransformers)
@@ -173,49 +332,55 @@ export function useTransformers() {
     }
   }, [])
 
+  // Update the updateTapPosition function to include AVR logic
   const updateTapPosition = useCallback(
     async (transformerId: string, direction: "raise" | "lower") => {
+      const transformer = transformers.find((t) => t.id === transformerId)
+      if (!transformer) return
+
+      // Check if command is allowed based on AVR logic
+      const commandCheck = canIssueCommand(transformer, direction)
+      if (!commandCheck.allowed) {
+        throw new Error(commandCheck.reason)
+      }
+
+      // Existing cooldown and loading logic...
       const now = Date.now()
       const lastTime = lastTapChangeTime.get(transformerId) || 0
       const timeSinceLastCommand = now - lastTime
 
-      // Check if enough time has passed since last command
       if (timeSinceLastCommand < commandDelay * 1000) {
         const remainingTime = Math.ceil((commandDelay * 1000 - timeSinceLastCommand) / 1000)
         throw new Error(`Please wait ${remainingTime} more seconds before next command`)
       }
 
-      // Set loading state
       setTapChangeLoading((prev) => new Set(prev).add(transformerId))
 
       try {
-        // Simulate command execution time (2 seconds)
         await new Promise((resolve) => setTimeout(resolve, 2000))
 
         setTransformers((prev) => {
-          const updated = prev.map((transformer) => {
-            if (transformer.id === transformerId) {
-              const currentPosition = transformer.tapPosition
+          const updated = prev.map((t) => {
+            if (t.id === transformerId) {
+              const currentPosition = t.tapPosition
               let newPosition = currentPosition
 
-              if (direction === "raise" && currentPosition < transformer.tapLimits.max) {
+              if (direction === "raise" && currentPosition < t.tapLimits.max) {
                 newPosition = currentPosition + 1
-              } else if (direction === "lower" && currentPosition > transformer.tapLimits.min) {
+              } else if (direction === "lower" && currentPosition > t.tapLimits.min) {
                 newPosition = currentPosition - 1
               }
 
-              return { ...transformer, tapPosition: newPosition }
+              return { ...t, tapPosition: newPosition }
             }
-            return transformer
+            return t
           })
           setHasUnsavedChanges(true)
           return updated
         })
 
-        // Update last command time
         setLastTapChangeTime((prev) => new Map(prev).set(transformerId, now))
       } finally {
-        // Remove loading state
         setTapChangeLoading((prev) => {
           const newSet = new Set(prev)
           newSet.delete(transformerId)
@@ -223,7 +388,7 @@ export function useTransformers() {
         })
       }
     },
-    [commandDelay, lastTapChangeTime],
+    [commandDelay, lastTapChangeTime, transformers],
   )
 
   const updateMasterFollower = useCallback((masterId: string, followerIds: string[]) => {
@@ -302,12 +467,66 @@ export function useTransformers() {
     console.log("Saved transformer configurations:", transformers)
   }, [transformers])
 
+  // Add function to update tolerance band
+  const updateToleranceBand = useCallback((transformerId: string, tolerancePercentage: number) => {
+    if (tolerancePercentage < 0.5 || tolerancePercentage > 5) {
+      throw new Error("Tolerance percentage must be between 0.5% and 5%")
+    }
+
+    setTransformers((prev) => {
+      const updated = prev.map((transformer) => {
+        if (transformer.id === transformerId) {
+          const { lowerLimit, upperLimit } = calculateToleranceBand(
+            transformer.toleranceBand.referenceVoltage,
+            tolerancePercentage,
+          )
+          return {
+            ...transformer,
+            toleranceBand: {
+              ...transformer.toleranceBand,
+              tolerancePercentage,
+              lowerLimit,
+              upperLimit,
+            },
+          }
+        }
+        return transformer
+      })
+      setHasUnsavedChanges(true)
+      return updated
+    })
+  }, [])
+
+  // Add function to update current rating
+  const updateCurrentRating = useCallback((transformerId: string, ratedCurrent: number, overCurrentLimit: number) => {
+    setTransformers((prev) => {
+      const updated = prev.map((transformer) => {
+        if (transformer.id === transformerId) {
+          return {
+            ...transformer,
+            currentRating: {
+              ...transformer.currentRating,
+              ratedCurrent,
+              overCurrentLimit,
+            },
+          }
+        }
+        return transformer
+      })
+      setHasUnsavedChanges(true)
+      return updated
+    })
+  }, [])
+
+  // Return the new functions
   return {
     transformers,
     updateTransformerMode,
     updateTapPosition,
     updateMasterFollower,
     updateCommandDelay,
+    updateToleranceBand,
+    updateCurrentRating,
     saveChanges,
     hasUnsavedChanges,
     modeChangeLoading,

@@ -27,6 +27,7 @@ import { LogExportDialog } from "@/components/log-export-dialog"
 import { ExportManager } from "@/utils/export-helpers"
 import { TransformerNameChip } from "@/components/transformer-name-chip"
 import { useToast } from "@/hooks/use-toast"
+import { EnhancedCurrentChart } from "@/components/enhanced-current-chart"
 
 interface TransformerDetailProps {
   transformer: Transformer
@@ -57,8 +58,8 @@ export function TransformerDetail({
     lower: transformer.voltageBand.lower,
     upper: transformer.voltageBand.upper,
   })
-  const [showTapChangeExport, setShowTapChangeExport] = useState(false)
-  const [showEventExport, setShowEventExport] = useState(false)
+  const [showTapChangeExport, setShowEventExport] = useState(false)
+  const [showEventExport, setShowTapChangeExport] = useState(false)
   const [cooldownTimer, setCooldownTimer] = useState(0)
   const [localCommandDelay, setLocalCommandDelay] = useState(commandDelay)
   const { toast } = useToast()
@@ -277,24 +278,29 @@ export function TransformerDetail({
 
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>Transformer Details:</span>
-            <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={25} />
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full p-0 flex flex-col">
+        <div className="px-6 pt-6 pb-2 border-b">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-2 flex-wrap">
+              <span>Transformer Details:</span>
+              <TransformerNameChip name={transformer.name} type={transformer.type} maxLength={25} />
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <Tabs defaultValue="overview">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="control">Control</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <Tabs defaultValue="overview" className="flex flex-col h-full">
+            {/* Tabs navigation */}
+            <div className="border-b px-6 pt-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="control">Control</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
+            </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <TabsContent value="overview" className="space-y-4 pt-4 m-0">
+            <TabsContent value="overview" className="space-y-4 pt-4 m-0 h-full">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <div className="rounded-lg border p-4">
                   <h3 className="mb-4 text-lg font-medium">Status</h3>
@@ -350,13 +356,6 @@ export function TransformerDetail({
                 <div className="rounded-lg border p-4">
                   <h3 className="mb-4 text-lg font-medium">Interlocks</h3>
                   <InterlockStatus interlocks={transformer.interlocks} />
-                </div>
-              </div>
-
-              <div className="rounded-lg border p-4">
-                <h3 className="mb-4 text-lg font-medium">Voltage Trend</h3>
-                <div className="min-h-[300px] max-h-[400px]">
-                  <EnhancedVoltageChart voltageBand={transformer.voltageBand} currentVoltage={transformer.voltage} />
                 </div>
               </div>
 
@@ -501,9 +500,35 @@ export function TransformerDetail({
                   </div>
                 )}
               </div>
+
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-4 text-lg font-medium">Trends</h3>
+                <Tabs defaultValue="voltage" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="voltage">Voltage Trend</TabsTrigger>
+                    <TabsTrigger value="current">Current Trend</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="voltage" className="mt-4">
+                    <div className="min-h-[300px] max-h-[400px]">
+                      <EnhancedVoltageChart
+                        voltageBand={transformer.voltageBand}
+                        currentVoltage={transformer.voltage}
+                      />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="current" className="mt-4">
+                    <div className="min-h-[300px] max-h-[400px]">
+                      <EnhancedCurrentChart
+                        currentRating={transformer.currentRating}
+                        currentValue={transformer.currentRating.currentValue}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
             </TabsContent>
 
-            <TabsContent value="control" className="space-y-4 pt-4 m-0">
+            <TabsContent value="control" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Operation Mode</h3>
 
@@ -605,7 +630,8 @@ export function TransformerDetail({
                         hasActiveInterlock ||
                         transformer.tapPosition >= transformer.tapLimits.max ||
                         isTapChanging ||
-                        cooldownTimer > 0
+                        cooldownTimer > 0 ||
+                        transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
                       }
                     >
                       {isTapChanging ? (
@@ -626,7 +652,8 @@ export function TransformerDetail({
                         hasActiveInterlock ||
                         transformer.tapPosition <= transformer.tapLimits.min ||
                         isTapChanging ||
-                        cooldownTimer > 0
+                        cooldownTimer > 0 ||
+                        transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
                       }
                     >
                       {isTapChanging ? (
@@ -651,6 +678,12 @@ export function TransformerDetail({
                   {transformer.tapPosition <= transformer.tapLimits.min && (
                     <p className="mt-2 text-sm text-orange-500">Cannot lower tap: already at minimum position</p>
                   )}
+                  {transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent && (
+                    <p className="mt-2 text-sm text-red-500">
+                      Cannot change tap: current exceeds rated value ({transformer.currentRating.currentValue}A &gt;{" "}
+                      {transformer.currentRating.ratedCurrent}A)
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -669,7 +702,7 @@ export function TransformerDetail({
               )}
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4 pt-4 m-0">
+            <TabsContent value="settings" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Voltage Band Configuration</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -713,30 +746,6 @@ export function TransformerDetail({
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-4 text-lg font-medium">Voltage Reference Source</h3>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="relay"
-                      name="voltage-source"
-                      defaultChecked={transformer.voltageSource === "relay"}
-                    />
-                    <Label htmlFor="relay">Relay</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="mfm"
-                      name="voltage-source"
-                      defaultChecked={transformer.voltageSource === "mfm"}
-                    />
-                    <Label htmlFor="mfm">MFM Meter</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg border p-4">
                 <h3 className="mb-4 text-lg font-medium">Command Settings</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -762,9 +771,68 @@ export function TransformerDetail({
                   </div>
                 </div>
               </div>
+
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-4 text-lg font-medium">Current Rating Configuration</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rated-current">Rated Current (A)</Label>
+                    <Input
+                      id="rated-current"
+                      type="number"
+                      value={transformer.currentRating.ratedCurrent}
+                      onChange={(e) => {
+                        const newRatedCurrent = Number(e.target.value)
+                        // Update local state or call update function
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="overcurrent-limit">Overcurrent Limit (A)</Label>
+                    <Input
+                      id="overcurrent-limit"
+                      type="number"
+                      value={transformer.currentRating.overCurrentLimit}
+                      onChange={(e) => {
+                        const newOverCurrentLimit = Number(e.target.value)
+                        // Update local state or call update function
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Current Value:</span>
+                    <span
+                      className={`font-medium ${
+                        transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {transformer.currentRating.currentValue} A
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Status:</span>
+                    <span
+                      className={`font-medium ${
+                        transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
+                          ? "text-red-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {transformer.currentRating.currentValue > transformer.currentRating.ratedCurrent
+                        ? "Over Rated Current"
+                        : "Normal"}
+                    </span>
+                  </div>
+                </div>
+                <Button className="mt-4">Save Current Settings</Button>
+              </div>
             </TabsContent>
 
-            <TabsContent value="history" className="space-y-4 pt-4 m-0">
+            <TabsContent value="history" className="space-y-4 pt-4 m-0 h-full">
               <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium">Tap Change Log</h3>
@@ -895,24 +963,24 @@ export function TransformerDetail({
                 </div>
               </div>
             </TabsContent>
-          </div>
+          </Tabs>
+        </div>
 
-          <LogExportDialog
-            isOpen={showTapChangeExport}
-            onClose={() => setShowTapChangeExport(false)}
-            logType="tap-change"
-            transformerName={transformer.name}
-            onExport={handleTapChangeExport}
-          />
+        <LogExportDialog
+          isOpen={showTapChangeExport}
+          onClose={() => setShowTapChangeExport(false)}
+          logType="tap-change"
+          transformerName={transformer.name}
+          onExport={handleTapChangeExport}
+        />
 
-          <LogExportDialog
-            isOpen={showEventExport}
-            onClose={() => setShowEventExport(false)}
-            logType="event"
-            transformerName={transformer.name}
-            onExport={handleEventExport}
-          />
-        </Tabs>
+        <LogExportDialog
+          isOpen={showEventExport}
+          onClose={() => setShowEventExport(false)}
+          logType="event"
+          transformerName={transformer.name}
+          onExport={handleEventExport}
+        />
       </DialogContent>
     </Dialog>
   )
