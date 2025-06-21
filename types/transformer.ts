@@ -12,6 +12,13 @@ export interface MasterFollower {
   followerIds: string[] | null
 }
 
+export interface TapLimits {
+  min: number
+  max: number
+}
+
+export type TransformerType = "Individual" | "Master" | "Follower"
+
 export interface Transformer {
   id: string
   name: string
@@ -19,6 +26,7 @@ export interface Transformer {
   status: "normal" | "warning" | "error"
   voltage: number
   tapPosition: number
+  tapLimits: TapLimits
   voltageBand: {
     lower: number
     upper: number
@@ -26,4 +34,5 @@ export interface Transformer {
   voltageSource: "relay" | "mfm"
   interlocks: Interlocks
   masterFollower: MasterFollower | null
+  type: TransformerType
 }

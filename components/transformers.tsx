@@ -7,14 +7,35 @@ import { MasterFollowerConfig } from "@/components/master-follower-config"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTransformers } from "@/hooks/use-transformers"
+import { TransformerTreeView } from "@/components/transformer-tree-view"
+import { useToast } from "@/hooks/use-toast"
+import { Save, AlertTriangle } from "lucide-react"
 
 export function Transformers() {
-  const { transformers, updateTransformerMode, updateMasterFollower } = useTransformers()
+  const {
+    transformers,
+    updateTransformerMode,
+    updateTapPosition,
+    updateMasterFollower,
+    updateCommandDelay,
+    saveChanges,
+    hasUnsavedChanges,
+    modeChangeLoading,
+    tapChangeLoading,
+    commandDelay,
+    getRemainingCooldown,
+  } = useTransformers()
   const [selectedTransformer, setSelectedTransformer] = useState<string | null>(null)
   const [showMasterFollowerConfig, setShowMasterFollowerConfig] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const { toast } = useToast()
 
-  const handleModeChange = (transformerId: string, mode: "auto" | "manual") => {
-    updateTransformerMode(transformerId, mode)
+  const handleModeChange = async (transformerId: string, mode: "auto" | "manual") => {
+    await updateTransformerMode(transformerId, mode)
+  }
+
+  const handleTapChange = async (transformerId: string, direction: "raise" | "lower") => {
+    await updateTapPosition(transformerId, direction)
   }
 
   const handleMasterFollowerChange = (masterId: string, followerIds: string[]) => {
@@ -22,12 +43,61 @@ export function Transformers() {
     setShowMasterFollowerConfig(false)
   }
 
+  const handleSaveChanges = async () => {
+    setIsSaving(true)
+    try {
+      await saveChanges()
+      toast({
+        title: "Changes Saved",
+        description: "All transformer configurations have been saved successfully.",
+        duration: 3000,
+      })
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800">Transformer Management</h2>
-        <Button onClick={() => setShowMasterFollowerConfig(true)}>Configure Master-Follower</Button>
+        <div className="flex items-center gap-3">
+          {hasUnsavedChanges && (
+            <Button onClick={handleSaveChanges} disabled={isSaving} className="flex items-center gap-2">
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          )}
+          <Button onClick={() => setShowMasterFollowerConfig(true)}>Configure Master-Follower</Button>
+        </div>
       </div>
+
+      {hasUnsavedChanges && (
+        <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <p className="text-sm text-yellow-800">
+              You have unsaved changes. Click "Save Changes" to persist your modifications.
+            </p>
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="grid" className="mb-8">
         <TabsList>
@@ -40,62 +110,29 @@ export function Transformers() {
               <TransformerCard
                 key={transformer.id}
                 transformer={transformer}
+                transformers={transformers}
                 onClick={() => setSelectedTransformer(transformer.id)}
               />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="list" className="mt-4">
-          <div className="rounded-lg border">
-            <div className="grid grid-cols-6 gap-4 border-b bg-gray-50 p-4 font-medium">
-              <div>Name</div>
-              <div>Mode</div>
-              <div>Voltage</div>
-              <div>Tap Position</div>
-              <div>Status</div>
-              <div></div>
-            </div>
-            {transformers.map((transformer) => (
-              <div key={transformer.id} className="grid grid-cols-6 gap-4 border-b p-4 last:border-0">
-                <div>{transformer.name}</div>
-                <div>
-                  {transformer.masterFollower
-                    ? transformer.masterFollower.isMaster
-                      ? "Master"
-                      : "Follower"
-                    : transformer.mode}
-                </div>
-                <div>{transformer.voltage} V</div>
-                <div>{transformer.tapPosition}</div>
-                <div>
-                  <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                      transformer.status === "normal"
-                        ? "bg-green-100 text-green-800"
-                        : transformer.status === "warning"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {transformer.status}
-                  </span>
-                </div>
-                <div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedTransformer(transformer.id)}>
-                    Details
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <TransformerTreeView transformers={transformers} onTransformerSelect={setSelectedTransformer} />
         </TabsContent>
       </Tabs>
 
       {selectedTransformer && (
         <TransformerDetail
           transformer={transformers.find((t) => t.id === selectedTransformer)!}
+          transformers={transformers}
           onClose={() => setSelectedTransformer(null)}
           onModeChange={handleModeChange}
+          onTapChange={handleTapChange}
+          modeChangeLoading={modeChangeLoading}
+          tapChangeLoading={tapChangeLoading}
+          commandDelay={commandDelay}
+          onCommandDelayChange={updateCommandDelay}
+          getRemainingCooldown={getRemainingCooldown}
         />
       )}
 
